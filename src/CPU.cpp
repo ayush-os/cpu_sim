@@ -5,6 +5,8 @@
 const int NUM_REGS = 32;
 const int MEM_SIZE = 16 * 1024 * 1024;  // 1024 bytes = 1 kb -> 1024 KB = 1 MB -> 16 * 1 MB = 16 MB
 
+const int IO = 0xFFFF0000;
+
 const uint8_t OPCODE_MASK = 0x7f;
 const uint8_t FUNCT7_SHIFT = 0x19;
 const uint8_t FUNCT7_MASK = 0x7f;
@@ -114,10 +116,20 @@ CPU::CPU()
     : pc(0),
       regs(std::make_unique<uint32_t[]>(NUM_REGS)),
       mem(std::make_unique<unsigned char[]>(MEM_SIZE)) {
-  mem.get()[3] = 0x00;
-  mem.get()[2] = 0x00;
-  mem.get()[1] = 0x00;
-  mem.get()[0] = 0x00;
+  mem.get()[0x7] = 0x00;
+  mem.get()[0x6] = 0x00;
+  mem.get()[0x5] = 0x00;
+  mem.get()[0x4] = 0x73;
+
+  mem.get()[0x3] = 0x00;
+  mem.get()[0x2] = 0x53;
+  mem.get()[0x1] = 0x20;
+  mem.get()[0x0] = 0x23;
+
+  // regs.get()[1] = 0x41;
+  // regs.get()[17] = 93;
+  regs[5] = 0x65626142;
+  regs[6] = 0xFFFF0000;
 }
 
 uint32_t makeInstrKey(const uint32_t& instr) {
@@ -314,19 +326,33 @@ void CPU::execLHU(const Instr& instr) {
 
 void CPU::execSB(const Instr& instr) {
   uint32_t addr = regs[instr.rs1] + instr.imm;
-  *reinterpret_cast<uint32_t*>(mem.get() + addr) = regs[instr.rs2] & BYTE_MASK;
+  if (addr == IO) {
+    std::cout << static_cast<char>(regs[instr.rs2] & BYTE_MASK) << std::endl;
+  } else {
+    *reinterpret_cast<uint32_t*>(mem.get() + addr) = regs[instr.rs2] & BYTE_MASK;
+  }
   pc += 4;
 }
 
 void CPU::execSH(const Instr& instr) {
   uint32_t addr = regs[instr.rs1] + instr.imm;
-  *reinterpret_cast<uint32_t*>(mem.get() + addr) = regs[instr.rs2] & HALF_MASK;
+  if (addr == IO) {
+    auto bytes = std::bit_cast<std::array<char, 4>>(regs[instr.rs2]);
+    std::cout << bytes[0] << bytes[1] << std::endl;
+  } else {
+    *reinterpret_cast<uint32_t*>(mem.get() + addr) = regs[instr.rs2] & HALF_MASK;
+  }
   pc += 4;
 }
 
 void CPU::execSW(const Instr& instr) {
   uint32_t addr = regs[instr.rs1] + instr.imm;
-  *reinterpret_cast<uint32_t*>(mem.get() + addr) = regs[instr.rs2];
+  if (addr == IO) {
+    auto bytes = std::bit_cast<std::array<char, 4>>(regs[instr.rs2]);
+    std::cout << bytes[0] << bytes[1] << bytes[2] << bytes[3] << std::endl;
+  } else {
+    *reinterpret_cast<uint32_t*>(mem.get() + addr) = regs[instr.rs2];
+  }
   pc += 4;
 }
 

@@ -15,7 +15,7 @@ class CPU {
 public:
   uint32_t pc;
   std::unique_ptr<uint32_t[]> regs;
-  std::unique_ptr<unsigned char[]> mem;  // 16 MB: 0x000000 to 0xFFFFFF
+  std::unique_ptr<unsigned char[]> mem;  // 16 MB: 0x000000 to 0x1000000
 
   explicit CPU();
   inline uint32_t fetch(const uint32_t& pc) {
